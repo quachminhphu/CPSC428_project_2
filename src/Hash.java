@@ -6,7 +6,7 @@ public class Hash {
 		
 		for(int i = 0; i < size; i++){
 			for(int j = 0; j < 8; j++){
-				int left = (a[i] >> j) & 0x01;
+				int left  = (a[i] >> j) & 0x01;
 				int right = (b[i] >> j) & 0x01;
 				if( left != right ){
 					diff++;
@@ -56,9 +56,32 @@ public class Hash {
 	    return count;
 	}
 	
+	public static byte[] flip(byte[] array, int pos)
+	{
+		byte[] result = new byte[array.length];
+		
+		int index = -1;
+		int bit   = -1;
+		if(pos > -1 && pos < array.length * 8){
+			index = pos / 8;
+			bit   = 7 - pos % 8;
+		}
+		
+		for(int i = 0; i < array.length; i++){
+			if(i == index){
+				result[i] = (byte) (array[i] ^ ( 0b01 << bit ));	
+			} else {
+				result[i] = array[i];
+			}
+		}
+		
+		
+		return result;
+	}
+	
 	public static void main(String[] args){
-		byte[] a = new byte[]{ (byte) 0xAA, (byte) 0x23, (byte) 0xFC };
-		byte[] b = new byte[]{ (byte) 0x11, (byte) 0x72, (byte) 0x8B };
+		byte[] a = new byte[]{ (byte) 0b10101010, (byte) 0b10101010, (byte) 0b10101010 };
+		byte[] b = flip(a, 8);
 		
 		System.out.print("a = ");
 		printByteArrayInBinary(a);
