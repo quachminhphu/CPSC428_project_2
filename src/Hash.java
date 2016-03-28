@@ -1,27 +1,20 @@
 
 public class Hash {
 	public static int diff ( byte [] a, byte [] b ){
-		int totalDiff = 0;
-		int aSize = a.length;
-		int bSize = b.length;
-		if( aSize > bSize ){
-			totalDiff += (aSize - bSize); 
-			for(int x=0;x<= bSize;x++){
-				if(a[x]!=b[x]){
-					totalDiff++;
+		int size = Math.min(a.length,  b.length);
+		int diff = 8 * Math.abs(a.length - b.length);
+		
+		for(int i = 0; i < size; i++){
+			for(int j = 0; j < 8; j++){
+				int left = (a[i] >> j) & 0x01;
+				int right = (b[i] >> j) & 0x01;
+				if( left != right ){
+					diff++;
 				}
 			}
-		}else if (aSize < bSize){
-			totalDiff += (bSize - aSize);
-			for(int x=0;x<= aSize;x++){
-				if(a[x]!=b[x]){
-					totalDiff++;
-				}
-			}
-		}else {
-			
 		}
-		return totalDiff;
+		
+		return diff;
 	}
 	
 	public static void printByteArrayInBinary(byte [] array)
@@ -61,6 +54,23 @@ public class Hash {
 	    	}
 	    }
 	    return count;
+	}
+	
+	public static void main(String[] args){
+		byte[] a = new byte[]{ (byte) 0xAA, (byte) 0x23, (byte) 0xFC };
+		byte[] b = new byte[]{ (byte) 0x11, (byte) 0x72, (byte) 0x8B };
+		
+		System.out.print("a = ");
+		printByteArrayInBinary(a);
+		
+		System.out.print("b = ");
+		printByteArrayInBinary(b);
+		
+		int diff = diff(a, b);
+		
+		System.out.printf("Diff = %d",diff);
+		
+		
 	}
 
 }
