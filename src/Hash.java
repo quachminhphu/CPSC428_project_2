@@ -1,5 +1,16 @@
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
 
 public class Hash {
+	
+	public static final int MESSAGE_LENGTH = 8;
+	public static final int HASH_LENGTH = 4;
+	public static final String HASH_TYPE = "SHA-1";
+	
 	public static int diff ( byte [] a, byte [] b ){
 		int size = Math.min(a.length,  b.length);
 		int diff = 8 * Math.abs(a.length - b.length);
@@ -75,25 +86,144 @@ public class Hash {
 			}
 		}
 		
+		return result;
+	}
+	
+	public static void flipWithoutNew(byte[] array, int pos){
+		if(pos > -1 && pos < array.length * 8){
+			int index = pos / 8;
+			int bit   = 7 - pos % 8;
+			array[index] = (byte) (array[index] ^ ( 0b01 << bit ));	
+		}
+	}
+	
+	public static boolean bitEqual(byte[] a, byte[] b, int pos){
+		int index = pos / 8;
+		int bit   = 7 - pos % 8;
+		
+		int left = a[index] & (0b01 << bit);
+		int right = b[index] & (0b01 << bit);
+		
+		return left == right;
+	}
+	
+	public static byte[] generateMessage(int length){
+		byte[] result = new byte[length];
+		
+		Random random = new Random();
+		
+		for(int i = 0; i < length; i++){
+			result[i] = (byte) random.nextInt();
+		}
 		
 		return result;
 	}
 	
+	public static byte[] hash(byte[] input, int size){
+		byte[] hash;
+		
+		MessageDigest md = null;
+		
+		try {
+			md = MessageDigest.getInstance(HASH_TYPE);
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		hash = md.digest(input);
+		
+		if(size > hash.length)
+			throw new IllegalArgumentException("Size is too large!");
+		
+		byte[] result = new byte[size];
+		
+		for(int i = 0; i < size; i++){
+			result[i] = hash[i];
+		}
+		
+		return result;
+	}
+	
+	public static String byteArrayToHex(byte [] array)
+	{
+		String s = new String();
+		for(int i = 0; i < array.length-1; i++)
+		{
+			s = s + (Integer.toHexString((array[i]>>4)&0x0F).toUpperCase());
+			s = s + (Integer.toHexString(array[i]&0x0F).toUpperCase() );
+		}
+
+		s = s + (Integer.toHexString(array[array.length-1]>>4&0x0F).toUpperCase());
+		s = s +(Integer.toHexString(array[array.length-1]&0x0F).toUpperCase());
+		return s;
+	}
+	
+	public static double average(Integer[] array){
+		int sum = 0;
+		
+		for(int i = 0; i < array.length; i++){
+			sum += array[i];
+		}
+		
+		double average = (double) sum / array.length;
+		
+		return average;
+	}
+	
 	public static void main(String[] args){
-		byte[] a = new byte[]{ (byte) 0b10101010, (byte) 0b10101010, (byte) 0b10101010 };
-		byte[] b = flip(a, 8);
+		byte[] message = generateMessage(MESSAGE_LENGTH);
+		byte[] hashA   = hash(message, HASH_LENGTH);
+		byte[] hashB   = hashA.clone();
 		
-		System.out.print("a = ");
-		printByteArrayInBinary(a);
+		System.out.printf("Message: %s%n",byteArrayToHex(message));
+		System.out.printf("Hashed:  %s%n",byteArrayToHex(hashA));
 		
-		System.out.print("b = ");
-		printByteArrayInBinary(b);
+		Integer[] diff  = new Integer[ message.length * 8 ];
+		int[] bitTally = new int[ HASH_LENGTH * 8 ];
+	
+		//Index of diffMessage is the # of bits changed (+ 1)
 		
-		int diff = diff(a, b);
+		for(int i = 0; i < diff.length; i++){
+			flipWithoutNew(message, i);
+			
+			hashA = hash(message, HASH_LENGTH);
+			
+			diff[i] = diff( hashA, hashB );
+			
+			
+			//Track the difference bteween bits in hashA and hashB
+			for(int j = 0; j < bitTally.length; j++){
+				if(bitEqual(hashA, hashB, j))
+					bitTally[j]++;
+			}
+			
+			hashB = hashA.clone();
+		}
 		
-		System.out.printf("Diff = %d",diff);
+		List<Integer> diffList = Arrays.asList(diff);
+		
+		int max = Collections.max(diffList);
+		int min = Collections.min(diffList);
+		double avg = average(diff);
+		System.out.printf("MAX: %d%nMIN: %d%nAVG: %.2f%n", max, min, avg);
 		
 		
+		System.out.print("DIFF:  [");
+		for(int i = 0; i < diff.length; i++){
+			System.out.print(diff[i]);
+			if(i < diff.length - 1)
+				System.out.print(", ");
+			else
+				System.out.println("]");
+		}
+		
+		System.out.print("TALLY: [");
+		for(int i = 0; i < bitTally.length; i++){
+			System.out.print(bitTally[i]);
+			if(i < bitTally.length - 1)
+				System.out.print(", ");
+			else
+				System.out.println("]");
+		}
 	}
 
 }
